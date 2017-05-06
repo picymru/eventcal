@@ -1,15 +1,36 @@
 #!/usr/bin/env python
 
-import os, sys, requests, logging
+import os, sys, requests, logging, calendar, datetime, ujson
 from bottle import route, request, response, redirect, hook, error, default_app, view, static_file, template, HTTPError
 from icalendar import Calendar
 from tinydb import TinyDB, Query, where
 from tinydb.operations import increment
 
 def fetchData(db, uri):
-	table = db.table('events')
 	ptr = Query()
+	table = db.table('events')
+	settings = db.table('settings')
 	cal = Calendar.from_ical(requests.get(uri).text)
+
+	lastUpdated = settings.search(ptr.name == 'fetchTime')
+	if len(lastUpdated) == 0:
+		# We haven't fetched data at all!
+		log.info("Data fetching has not been completed yet. Fetching...")
+		settings.insert({
+			'name': 'fetchTime',
+			'value': calendar.timegm(datetime.datetime.utcnow().timetuple())
+		})
+		pass
+	else:
+		past = datetime.datetime.utcnow() - datetime.timedelta(hours=1)
+		if lastUpdated[0]['value'] < calendar.timegm(past.timetuple()):
+			# The data is older than an hour, so we refresh it
+			log.info('Data is considered stale. Fetching...')
+			pass
+		else:
+			# The data is less than an hour old, so we consider it current
+			log.info('Returning cached data...')
+			return table.all()
 
 	for event in cal.walk('vevent'):
 		uid = event.decoded('uid').replace('@zoho.com', '')
@@ -39,7 +60,16 @@ def fetchData(db, uri):
 				}, ptr.id == uid)
 			else:
 				log.info('Event {} has not been updated since insertion'.format(uid))
+
+	settings.update({
+		'value': calendar.timegm(datetime.datetime.utcnow().timetuple())
+	}, ptr.name == 'fetchTime')
 	return table.all()
+
+@route('/')
+def index():
+	calendar = fetchData(app_db, app_ical)
+	return template('index', events=calendar)
 
 if __name__ == '__main__':
 
@@ -58,5 +88,6 @@ if __name__ == '__main__':
 	try:
 		assert app_ical is not ''
 		app = default_app()
+		app.run(host=serverHost, port=serverPort, server='tornado')
 	except AssertionError:
 		log.error('APP_ICAL is unset. Set APP_ICAL to iCal URL and restart.')

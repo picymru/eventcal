@@ -70,6 +70,13 @@ def fetchData(db, uri):
 def server_static(filepath):
 	return static_file(filepath, root='views/static')
 
+@route('/event/<id>')
+def event(id):
+	ptr = Query()
+	table = app_db.table('events')
+	event = table.search(ptr.id==id)[0]
+	return template('event', event=event)
+
 @route('/')
 def index():
 	calendar = fetchData(app_db, app_ical)

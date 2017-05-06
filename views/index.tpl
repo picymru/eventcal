@@ -13,7 +13,7 @@
 				<div class="blog-item">
 					<h6 class="date"><span class="icon-calendar"></span>{{event['date']}}</h6>              
 					{{!event['desc']}}
-					<a href="./{{event['id']}}">View event page &raquo;</a>
+					<a href="/event/{{event['id']}}">View event page &raquo;</a>
 				</div>
 			% end
 		</div>

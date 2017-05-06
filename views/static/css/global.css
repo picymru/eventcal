@@ -301,6 +301,11 @@ div.blog-item h6.date span.icon-calendar {
 	left: 10px;
 }
 
+div.blog-item h6.date span.icon-pushpin {
+	position: absolute;
+	left: 10px;
+}
+
 div.blog-item a {
 	text-decoration: none;
 }

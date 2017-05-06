@@ -12,8 +12,8 @@
 				<h2>{{event['title']}}</h2>
 				<div class="blog-item">
 					<h6 class="date"><span class="icon-calendar"></span>{{event['date']}}</h6>              
-					<p>{{event['desc']}}</p>
-					<a href="./events/{{event['id']}}">View event page &raquo;</a>
+					{{!event['desc']}}
+					<a href="./{{event['id']}}">View event page &raquo;</a>
 				</div>
 			% end
 		</div>

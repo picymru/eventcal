@@ -14,5 +14,8 @@ pip-selfcheck.json
 .codio
 local/
 
+## mac ##
+.DS_Store
+
 ## application specific ##
 db/*.json

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import os, sys, requests, logging, calendar, datetime, ujson
+import os, sys, requests, logging, calendar, datetime, ujson, CommonMark
 from bottle import route, request, response, redirect, hook, error, default_app, view, static_file, template, HTTPError
 from icalendar import Calendar
 from tinydb import TinyDB, Query, where
@@ -38,10 +38,10 @@ def fetchData(db, uri):
 			log.info("Inserting new event: {}".format(uid))
 			table.insert({
 				'id': uid,
-				'date': event.decoded('dtstart'),
+				'date': '{}'.format(event.decoded('dtstart')),
 				'title': event.decoded('summary'),
 				'location': event.decoded('location'),
-				'desc': event.decoded('description'),
+				'desc': CommonMark.commonmark(event.decoded('description')),
 				'url': event.decoded('url'),
 				'updated': '{}'.format(event.decoded('last-modified'))
 			})
@@ -51,10 +51,10 @@ def fetchData(db, uri):
 			if lookup[0]['updated'] != '{}'.format(event.decoded('last-modified')):
 				log.info('Found an updated event: {}'.format(uid))
 				table.update({
-					'date': event.decoded('dtstart'),
+					'date': '{}'.format(event.decoded('dtstart')),
 					'title': event.decoded('summary'),
 					'location': event.decoded('location'),
-					'desc': event.decoded('description'),
+					'desc': CommonMark.commonmark(event.decoded('description')),
 					'url': event.decoded('url'),
 					'updated': '{}'.format(event.decoded('last-modified'))
 				}, ptr.id == uid)
@@ -65,6 +65,10 @@ def fetchData(db, uri):
 		'value': calendar.timegm(datetime.datetime.utcnow().timetuple())
 	}, ptr.name == 'fetchTime')
 	return table.all()
+
+@route('/assets/<filepath:path>')
+def server_static(filepath):
+	return static_file(filepath, root='views/static')
 
 @route('/')
 def index():

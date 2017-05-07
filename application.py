@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 
-import os, sys, requests, logging, calendar, datetime, ujson, CommonMark
+import os, sys, requests, logging, calendar, datetime, ujson, hashlib, CommonMark
 from bottle import route, request, response, redirect, hook, error, default_app, view, static_file, template, HTTPError
 from icalendar import Calendar
 from tinydb import TinyDB, Query, where
 from tinydb.operations import increment
 
-def fetchData(db, uri):
+def fetchData(db, uri, cachetime=3600):
 	ptr = Query()
 	table = db.table('events')
 	settings = db.table('settings')
@@ -22,7 +22,7 @@ def fetchData(db, uri):
 		})
 		pass
 	else:
-		past = datetime.datetime.utcnow() - datetime.timedelta(hours=1)
+		past = datetime.datetime.utcnow() - datetime.timedelta(seconds=cachetime)
 		if lastUpdated[0]['value'] < calendar.timegm(past.timetuple()):
 			# The data is older than an hour, so we refresh it
 			log.info('Data is considered stale. Fetching...')
@@ -33,16 +33,16 @@ def fetchData(db, uri):
 			return table.all()
 
 	for event in cal.walk('vevent'):
-		uid = event.decoded('uid').replace('@zoho.com', '')
+		uid = hashlib.sha224(event.decoded('uid')).hexdigest()[:15]
 		if len(table.search(ptr.id == uid)) == 0:
 			log.info("Inserting new event: {}".format(uid))
 			table.insert({
 				'id': uid,
 				'date': '{}'.format(event.decoded('dtstart')),
 				'title': event.decoded('summary'),
-				'location': event.decoded('location'),
-				'desc': CommonMark.commonmark(event.decoded('description')),
-				'url': event.decoded('url'),
+				'location': event.decoded('location', 'Online'),
+				'desc': CommonMark.commonmark(event.decoded('description', 'This event doesn\'t have a description')),
+				'url': event.decoded('url', ''),
 				'updated': '{}'.format(event.decoded('last-modified'))
 			})
 		else:
@@ -53,9 +53,9 @@ def fetchData(db, uri):
 				table.update({
 					'date': '{}'.format(event.decoded('dtstart')),
 					'title': event.decoded('summary'),
-					'location': event.decoded('location'),
-					'desc': CommonMark.commonmark(event.decoded('description')),
-					'url': event.decoded('url'),
+					'location': event.decoded('location', 'Online'),
+					'desc': CommonMark.commonmark(event.decoded('description', 'This event doesn\'t have a description')),
+					'url': event.decoded('url', ''),
 					'updated': '{}'.format(event.decoded('last-modified'))
 				}, ptr.id == uid)
 			else:
@@ -77,9 +77,16 @@ def event(id):
 	event = table.search(ptr.id==id)[0]
 	return template('event', event=event)
 
+@route('/events.json')
+def indexJSON():
+	calendar = fetchData(app_db, app_ical, app_cachetime)
+	response.content_type = 'application/json'
+	return ujson.dumps(calendar)
+
 @route('/')
+@route('/events')
 def index():
-	calendar = fetchData(app_db, app_ical)
+	calendar = fetchData(app_db, app_ical, app_cachetime)
 	return template('index', events=calendar)
 
 if __name__ == '__main__':
@@ -93,11 +100,20 @@ if __name__ == '__main__':
 	# Configuration setting
 	serverHost = os.getenv('IP', 'localhost')
 	serverPort = os.getenv('PORT', '5000')
-	app_db = TinyDB(os.getenv('APP_DATABASE', 'db/app.json'))
+	app_cachetime = int(os.getenv('APP_CACHETIME', 3600))
+	app_dbpath = os.getenv('APP_DATABASE', 'db/app.json')
+	app_db = TinyDB(app_dbpath)
+	app_deleteOnLoad = os.getenv('APP_DELETE', '0')
 	app_ical = os.getenv('APP_ICAL', '')
 
 	try:
 		assert app_ical is not ''
+		if app_deleteOnLoad is not '0':
+			try:
+				os.unlink(app_dbpath)
+			except OSError:
+				log.error('Unable to remove active database at {}'.format(app_dbpath))
+				exit()
 		app = default_app()
 		app.run(host=serverHost, port=serverPort, server='tornado')
 	except AssertionError:

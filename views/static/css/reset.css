@@ -188,10 +188,6 @@ body,select,input,textarea {
 color:#444
 }
 
-h1,h2,h3,h4,h5,h6 {
-font-weight:bold
-}
-
 .ir {
 display:block;
 text-indent:-999em;

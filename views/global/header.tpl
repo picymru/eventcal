@@ -15,6 +15,7 @@
 
     <title>Events | PiCymru</title>
 
+    <link type="text/css" rel="stylesheet" href="https://fonts.googleapis.com/css?family=Montserrat:100,400,700">
     <link type="text/css" rel="stylesheet" href="/assets/fonts/stylesheet.css" />
     <link type="text/css" rel="stylesheet" href="/assets/css/reset.css" />
     <link type="text/css" rel="stylesheet" href="/assets/css/global.css" />
@@ -26,15 +27,15 @@
         <div class="main">
             <header class="small">
                 <div class="container">
-                    <a href="/" class="logo">
+                    <a href="https://picymru.org.uk/" class="logo">
                         <img src="/assets/img/logo-small.png" alt="PiCymru" />
                     </a>
                     <ul>
-                        <li><a href="/about">About</a></li>
-                        <li><a href="/blog">Blog</a></li>
-                        <li><a href="/events">Events</a></li>
-                        <li><a href="/projects">Projects</a></li>
-                        <li><a href="/contact">Contact</a></li>
+                        <li><a href="https://picymru.org.uk/about">About</a></li>
+                        <li><a href="https://picymru.org.uk/blog">Blog</a></li>
+                        <li><a href="https://events.picymru.org.uk">Events</a></li>
+                        <li><a href="https://picymru.org.uk/projects">Projects</a></li>
+                        <li><a href="https://picymru.org.uk/contact">Contact</a></li>
                     </ul>
                 </div>
             </header>

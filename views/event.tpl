@@ -11,10 +11,12 @@
 			<div class="blog-item">
 				<h6 class="date">
 					<span class="icon-calendar"></span>{{event['date']}}<br />
-					<span class="icon-pushpin"></span>{{event['location']}} <a href="http://maps.google.com/?q={{event['location']}}">[map]</a>
+					% if event['location'] != '':
+						<span class="icon-pushpin"></span>{{event['location']}} <a href="http://maps.google.com/?q={{event['location']}}">[map]</a>
+					% end
 				</h6>
 				{{!event['desc']}}
-				<a href="{{event['url']}}">Book tickets, or find out more &raquo;</a>
+				<a href="{{event['url']}}" target="_blank">Book tickets, or find out more &raquo;</a>
 			</div>
 		</div>
 	</div>

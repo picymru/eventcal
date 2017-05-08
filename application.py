@@ -1,12 +1,15 @@
 #!/usr/bin/env python
 
-import os, sys, requests, logging, calendar, datetime, ujson, hashlib, CommonMark
+import os, sys, requests, logging, calendar, datetime, ujson, hashlib, CommonMark, pytz
 from bottle import route, request, response, redirect, hook, error, default_app, view, static_file, template, HTTPError
 from icalendar import Calendar
 from tinydb import TinyDB, Query, where
 from tinydb.operations import increment
 
-def fetchData(db, uri, cachetime=3600):
+def utc_to_local(utc, tz):
+	return utc.replace(tzinfo=pytz.utc).astimezone(tz)
+
+def fetchData(db, uri, cachetime, tz):
 	ptr = Query()
 	table = db.table('events')
 	settings = db.table('settings')
@@ -35,10 +38,10 @@ def fetchData(db, uri, cachetime=3600):
 
 	for event in cal.walk('vevent'):
 		uid = hashlib.sha224(event.decoded('uid')).hexdigest()[:15]
-		date = event.decoded('dtstart').strftime("%d/%m/%Y")
-		dateEnd = event.decoded('dtend').strftime("%d/%m/%Y")
-		time = event.decoded('dtstart').strftime("%H:%M")
-		timeEnd = event.decoded('dtend').strftime("%H:%M")
+		date = utc_to_local(event.decoded('dtstart'), tz).strftime("%d/%m/%Y")
+		dateEnd = utc_to_local(event.decoded('dtend'), tz).strftime("%d/%m/%Y")
+		time = utc_to_local(event.decoded('dtstart'), tz).strftime("%H:%M")
+		timeEnd = utc_to_local(event.decoded('dtend'), tz).strftime("%H:%M")
 		if len(table.search(ptr.id == uid)) == 0:
 			log.info("Inserting new event: {}".format(uid))
 			table.insert({
@@ -88,7 +91,7 @@ def event(id):
 		table = app_db.table('events')
 		event = table.search(ptr.id==id)[0]
 	except IndexError:
-		fetchData(app_db, app_ical, app_cachetime)
+		fetchData(app_db, app_ical, app_cachetime, app_tz)
 		try:
 			event = table.search(ptr.id==id)[0]
 		except IndexError:
@@ -97,14 +100,14 @@ def event(id):
 
 @route('/events.json')
 def indexJSON():
-	calendar = fetchData(app_db, app_ical, app_cachetime)
+	calendar = fetchData(app_db, app_ical, app_cachetime, app_tz)
 	response.content_type = 'application/json'
 	return ujson.dumps(calendar)
 
 @route('/')
 @route('/events')
 def index():
-	calendar = fetchData(app_db, app_ical, app_cachetime)
+	calendar = fetchData(app_db, app_ical, app_cachetime, app_tz)
 	return template('index', events=calendar)
 
 if __name__ == '__main__':
@@ -123,6 +126,7 @@ if __name__ == '__main__':
 	app_db = TinyDB(app_dbpath)
 	app_deleteOnLoad = os.getenv('APP_DELETE', '0')
 	app_ical = os.getenv('APP_ICAL', '')
+	app_tz = pytz.timezone(os.getenv("APP_TZ", 'Europe/London'))
 
 	try:
 		assert app_ical is not ''

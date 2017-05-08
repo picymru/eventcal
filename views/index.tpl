@@ -9,12 +9,24 @@
 	<div class="container">
 		<div class="onecolumn">
 			% for event in events:
+			<div class="event">
 				<h2>{{event['title']}}</h2>
 				<div class="blog-item">
-					<h6 class="date"><span class="icon-calendar"></span>{{event['date']}}</h6>              
-					{{!event['desc']}}
-					<a href="/event/{{event['id']}}">View event page &raquo;</a>
+					<h6 class="date"><span class="icon-calendar"></span>
+					{{event['date']}}
+					
+					% if event['time'] != "00:00" and event['timeEnd'] != "00:00":
+					 {{event['time']}}
+					% end
+
+					% if event['time'] != event['timeEnd']:
+					 - {{event['timeEnd']}}
+					% end
+					</h6>
+					{{!event['desc'].split('<!--more-->')[0] or "<br />"}}
+					<a class="read-more" href="/event/{{event['id']}}">View event page &raquo;</a>
 				</div>
+			</div>
 			% end
 		</div>
 	</div>

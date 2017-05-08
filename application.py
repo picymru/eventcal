@@ -26,6 +26,7 @@ def fetchData(db, uri, cachetime=3600):
 		if lastUpdated[0]['value'] < calendar.timegm(past.timetuple()):
 			# The data is older than an hour, so we refresh it
 			log.info('Data is considered stale. Fetching...')
+			table.purge()
 			pass
 		else:
 			# The data is less than an hour old, so we consider it current
@@ -34,11 +35,18 @@ def fetchData(db, uri, cachetime=3600):
 
 	for event in cal.walk('vevent'):
 		uid = hashlib.sha224(event.decoded('uid')).hexdigest()[:15]
+		date = event.decoded('dtstart').strftime("%d/%m/%Y")
+		dateEnd = event.decoded('dtend').strftime("%d/%m/%Y")
+		time = event.decoded('dtstart').strftime("%H:%M")
+		timeEnd = event.decoded('dtend').strftime("%H:%M")
 		if len(table.search(ptr.id == uid)) == 0:
 			log.info("Inserting new event: {}".format(uid))
 			table.insert({
 				'id': uid,
-				'date': '{}'.format(event.decoded('dtstart')),
+				'date': date,
+				'dateEnd': dateEnd,
+				'time': time,
+				'timeEnd': timeEnd,
 				'title': event.decoded('summary'),
 				'location': event.decoded('location', 'Online'),
 				'desc': CommonMark.commonmark(event.decoded('description', 'This event doesn\'t have a description')),
@@ -51,7 +59,10 @@ def fetchData(db, uri, cachetime=3600):
 			if lookup[0]['updated'] != '{}'.format(event.decoded('last-modified')):
 				log.info('Found an updated event: {}'.format(uid))
 				table.update({
-					'date': '{}'.format(event.decoded('dtstart')),
+					'date': date,
+					'dateEnd': dateEnd,
+					'time': time,
+					'timeEnd': timeEnd,
 					'title': event.decoded('summary'),
 					'location': event.decoded('location', 'Online'),
 					'desc': CommonMark.commonmark(event.decoded('description', 'This event doesn\'t have a description')),
@@ -73,8 +84,15 @@ def server_static(filepath):
 @route('/event/<id>')
 def event(id):
 	ptr = Query()
-	table = app_db.table('events')
-	event = table.search(ptr.id==id)[0]
+	try:
+		table = app_db.table('events')
+		event = table.search(ptr.id==id)[0]
+	except IndexError:
+		fetchData(app_db, app_ical, app_cachetime)
+		try:
+			event = table.search(ptr.id==id)[0]
+		except IndexError:
+			return "Not Found"
 	return template('event', event=event)
 
 @route('/events.json')

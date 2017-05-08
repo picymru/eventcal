@@ -212,13 +212,12 @@ section.content.home {
 }
 
 section.content ul {
-	list-style: none;
 	margin: 0;
 	padding: 0;
 }
 
 section.content ul li {
-	margin: 3px 0;
+	margin: 1em 0 1em 3em;
 }
 
 div.highlight {}
@@ -281,8 +280,9 @@ div.threecolumn-right {
 }
 
 div.blog-item {
-	padding-bottom: 5px;
-	margin-bottom: 5px;
+	padding-bottom: 0.5em;
+	margin-bottom: 1em;
+	border-bottom: 1px solid rgba( 0, 0, 0, 0.1);
 }
 
 div.blog-item.full {
@@ -306,6 +306,7 @@ div.blog-item h6.date span.icon-calendar {
 div.blog-item h6.date span.icon-pushpin {
 	position: absolute;
 	left: 10px;
+	padding: 2px;
 }
 
 div.blog-item a {
@@ -317,7 +318,7 @@ div.blog-item a.read-more {
 	display: inline-block;
 	color: #fff;
 	text-decoration: none;
-	padding: 10px 15px;
+	padding: 15px;
 	border-radius: 5px;
 }
 

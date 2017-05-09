@@ -6,8 +6,8 @@ from icalendar import Calendar
 from tinydb import TinyDB, Query, where
 from tinydb.operations import increment
 
-def utc_to_local(utc, tz):
-	return utc.replace(tzinfo=pytz.utc).astimezone(tz)
+def utc_to_local(eventTime, tz):
+	return eventTime.replace(tzinfo=pytz.utc).astimezone(tz)
 
 def fetchData(db, uri, cachetime, tz):
 	ptr = Query()
@@ -38,10 +38,16 @@ def fetchData(db, uri, cachetime, tz):
 
 	for event in cal.walk('vevent'):
 		uid = hashlib.sha224(event.decoded('uid')).hexdigest()[:15]
-		date = utc_to_local(event.decoded('dtstart'), tz).strftime("%d/%m/%Y")
-		dateEnd = utc_to_local(event.decoded('dtend'), tz).strftime("%d/%m/%Y")
-		time = utc_to_local(event.decoded('dtstart'), tz).strftime("%H:%M")
-		timeEnd = utc_to_local(event.decoded('dtend'), tz).strftime("%H:%M")
+		date = event.decoded('dtstart').strftime("%d/%m/%Y")
+		dateEnd = event.decoded('dtend').strftime("%d/%m/%Y")
+
+		if type(event.get('dtstart').dt) == datetime.date:
+			time = "00:00"
+			timeEnd = "00:00"
+		else:
+			time = utc_to_local(event.get('dtstart').dt, tz).strftime("%H:%M")
+			timeEnd = utc_to_local(event.get('dtend').dt, tz).strftime("%H:%M")
+
 		if len(table.search(ptr.id == uid)) == 0:
 			log.info("Inserting new event: {}".format(uid))
 			table.insert({
@@ -52,7 +58,7 @@ def fetchData(db, uri, cachetime, tz):
 				'timeEnd': timeEnd,
 				'title': event.decoded('summary'),
 				'location': event.decoded('location', 'Online'),
-				'desc': CommonMark.commonmark(event.decoded('description', 'This event doesn\'t have a description')),
+				'desc': CommonMark.commonmark(event.decoded('description', 'This event doesn\'t have a description').decode('utf-8')),
 				'url': event.decoded('url', ''),
 				'updated': '{}'.format(event.decoded('last-modified'))
 			})

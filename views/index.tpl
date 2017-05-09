@@ -17,6 +17,8 @@
 					
 					% if event['time'] != "00:00" and event['timeEnd'] != "00:00":
 					 {{event['time']}}
+					% elif event['date'] != event['dateEnd']:
+					 - {{event['dateEnd']}}
 					% end
 
 					% if event['time'] != event['timeEnd']:

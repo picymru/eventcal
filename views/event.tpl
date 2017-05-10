@@ -27,13 +27,13 @@
 					% end
 				</h6>
 				{{!event['desc']}}
+				<a class="read-more" href="/">
+					&laquo; Back
+				</a>
 				% if event['url'] != '':
-					<a class="read-more" href="/">
-						&laquo; Back
-					</a>
-					<a class="read-more" href="{{event['url']}}" target="_blank">
-						Book tickets, or find out more &raquo;
-					</a>
+				<a class="read-more" href="{{event['url']}}" target="_blank">
+					Book tickets, or find out more &raquo;
+				</a>
 				% end
 			</div>
 		</div>
